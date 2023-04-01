@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ToDoList.Data;
+using ToDoList.Enum;
 using ToDoList.Models;
 
 namespace ToDoList.Controllers
@@ -56,10 +57,11 @@ namespace ToDoList.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,Priorety,Status,Action,ExpirationDate")] TaskEntity taskEntity)
+        public async Task<IActionResult> Create([Bind("Id,Title,Priorety,Action,ExpirationDate")] TaskEntity taskEntity)
         {
             if (ModelState.IsValid)
             {
+                taskEntity.Status = Status.New; 
                 _context.Add(taskEntity);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -158,6 +160,21 @@ namespace ToDoList.Controllers
         private bool TaskEntityExists(long id)
         {
           return (_context.Tasks?.Any(e => e.Id == id)).GetValueOrDefault();
+        }
+        
+        public async Task<IActionResult> Open(long id)
+        {
+            var taskEntity = await _context.Tasks.FindAsync(id);
+            if (taskEntity == null)
+            {
+                return NotFound();
+            }
+
+            taskEntity.Status = ToDoList.Enum.Status.Open;
+            _context.Update(taskEntity);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
     }
 }

@@ -1,3 +1,5 @@
+@using ToDoList.Enum
+@using Microsoft.AspNetCore.Mvc.TagHelpers
 @model ToDoList.Models.TaskEntity
 
 @{
@@ -20,13 +22,8 @@
             </div>
             <div class="form-group">
                 <label asp-for="Priorety" class="control-label"></label>
-                <select asp-for="Priorety" class="form-control"></select>
+                <select asp-for="Priorety" class="form-control" asp-items="Html.GetEnumSelectList<Priorety>()"></select>
                 <span asp-validation-for="Priorety" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Status" class="control-label"></label>
-                <input asp-for="Status" class="form-control" />
-                <span asp-validation-for="Status" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="Action" class="control-label"></label>
@@ -49,3 +46,6 @@
     <a asp-action="Index">Back to List</a>
 </div>
 
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
