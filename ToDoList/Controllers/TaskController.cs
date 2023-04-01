@@ -21,11 +21,47 @@ namespace ToDoList.Controllers
         }
 
         // GET: Task
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string sortOrder)
         {
-              return _context.Tasks != null ? 
-                          View(await _context.Tasks.ToListAsync()) :
-                          Problem("Entity set 'TDLContext.Tasks'  is null.");
+            ViewData["IdSortParm"] = String.IsNullOrEmpty(sortOrder) ? "id_desc" : "";
+            ViewData["TitleSortParm"] = sortOrder == "Title" ? "title_desc" : "Title";
+            ViewData["PrioritySortParm"] = sortOrder == "Priority" ? "priority_desc" : "Priority";
+            ViewData["StatusSortParm"] = sortOrder == "Status" ? "status_desc" : "Status";
+            ViewData["DateSortParm"] = sortOrder == "Date" ? "date_desc" : "Date";
+
+            var tasks = from t in _context.Tasks
+                select t;
+
+            switch (sortOrder)
+            {
+                case "id_desc":
+                    tasks = tasks.OrderByDescending(t => t.Id);
+                    break;
+                case "Title":
+                    tasks = tasks.OrderBy(t => t.Title);
+                    break;
+                case "title_desc":
+                    tasks = tasks.OrderByDescending(t => t.Title);
+                    break;
+                case "Priority":
+                    tasks = tasks.OrderBy(t => t.Priorety);
+                    break;
+                case "priority_desc":
+                    tasks = tasks.OrderByDescending(t => t.Priorety);
+                    break;
+                case "Status":
+                    tasks = tasks.OrderBy(t => t.Status);
+                    break;
+                case "status_desc":
+                    tasks = tasks.OrderByDescending(t => t.Status);
+                    break;
+
+                default:
+                    tasks = tasks.OrderBy(t => t.Id);
+                    break;
+            }
+
+            return View(await tasks.ToListAsync());
         }
 
         // GET: Task/Details/5
@@ -145,17 +181,25 @@ namespace ToDoList.Controllers
         {
             if (_context.Tasks == null)
             {
-                return Problem("Entity set 'TDLContext.Tasks'  is null.");
+                return Problem("Entity set 'TDLContext.Tasks' is null.");
             }
+    
             var taskEntity = await _context.Tasks.FindAsync(id);
-            if (taskEntity != null)
+            if (taskEntity == null)
+            {
+                return NotFound();
+            }
+
+            // Check if the task is not open before proceeding with the deletion
+            if (taskEntity.Status != ToDoList.Enum.Status.Open)
             {
                 _context.Tasks.Remove(taskEntity);
+                await _context.SaveChangesAsync();
             }
-            
-            await _context.SaveChangesAsync();
+
             return RedirectToAction(nameof(Index));
         }
+
 
         private bool TaskEntityExists(long id)
         {
@@ -175,6 +219,25 @@ namespace ToDoList.Controllers
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
+        }
+        
+        public async Task<IActionResult> Close(long? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var taskEntity = await _context.Tasks.FindAsync(id);
+            if (taskEntity == null)
+            {
+                return NotFound();
+            }
+
+            taskEntity.Status = ToDoList.Enum.Status.Closed;
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Details), new { id });
         }
     }
 }
